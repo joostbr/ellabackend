@@ -6,16 +6,37 @@ import { supabase } from '@/lib/supabase'
 import { hashPassword } from '@/lib/auth'
 import Link from 'next/link'
 
+// Password requirements
+const MIN_PASSWORD_LENGTH = 8
+
 export default function RegisterPage() {
   const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [name, setName] = useState('')
   const [error, setError] = useState('')
+
+  function validatePassword(): string | null {
+    if (password.length < MIN_PASSWORD_LENGTH) {
+      return `Password must be at least ${MIN_PASSWORD_LENGTH} characters long`
+    }
+    if (password !== confirmPassword) {
+      return 'Passwords do not match'
+    }
+    return null
+  }
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setError('')
+
+    // Validate password
+    const passwordError = validatePassword()
+    if (passwordError) {
+      setError(passwordError)
+      return
+    }
     
     try {
       // First check if email already exists
@@ -96,6 +117,19 @@ export default function RegisterPage() {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            minLength={MIN_PASSWORD_LENGTH}
+            required
+          />
+          <small>Password must be at least {MIN_PASSWORD_LENGTH} characters long</small>
+        </div>
+        <div>
+          <label htmlFor="confirmPassword">Confirm Password</label>
+          <input
+            id="confirmPassword"
+            type="password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            minLength={MIN_PASSWORD_LENGTH}
             required
           />
         </div>
