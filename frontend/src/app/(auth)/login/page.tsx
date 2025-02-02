@@ -2,13 +2,18 @@
 
 import { signIn } from 'next-auth/react'
 import { FormEvent, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
+import Link from 'next/link'
 
 export default function LoginPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+
+  // Check if user just registered
+  const justRegistered = searchParams.get('registered') === 'true'
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -35,6 +40,11 @@ export default function LoginPage() {
     <div>
       <form onSubmit={handleSubmit}>
         <h1>Login</h1>
+        {justRegistered && (
+          <p style={{ color: 'green' }}>
+            Registration successful! Please log in.
+          </p>
+        )}
         {error && <p style={{ color: 'red' }}>{error}</p>}
         <div>
           <label htmlFor="email">Email</label>
@@ -57,6 +67,10 @@ export default function LoginPage() {
           />
         </div>
         <button type="submit">Log in</button>
+        <p>
+          Don't have an account?{' '}
+          <Link href="/register">Register here</Link>
+        </p>
       </form>
     </div>
   )
