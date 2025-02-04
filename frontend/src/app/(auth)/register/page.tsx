@@ -57,7 +57,7 @@ export default function RegisterPage() {
         .insert([
           {
             email,
-            password_hash: hashPassword(password),
+            password_hash: await hashPassword(password),
             name
           }
         ])

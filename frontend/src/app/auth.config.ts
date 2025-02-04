@@ -1,7 +1,7 @@
 import type { AuthOptions } from 'next-auth'
 import CredentialsProvider from "next-auth/providers/credentials"
 import { supabase } from '@/lib/supabase'
-import { hashPassword } from '@/lib/auth'
+import { hashPassword, verifyPassword } from '@/lib/auth'
 
 export const authConfig: AuthOptions = {
   providers: [
@@ -19,12 +19,20 @@ export const authConfig: AuthOptions = {
         try {
           const { data: user, error } = await supabase
             .from('users')
-            .select('id, email, name')
+            .select('id, email, name, password_hash')
             .eq('email', credentials.email)
-            .eq('password_hash', hashPassword(credentials.password))
             .single()
 
           if (error || !user) {
+            return null
+          }
+
+          const isValidPassword = await verifyPassword(
+            credentials.password,
+            user.password_hash
+          )
+
+          if (!isValidPassword) {
             return null
           }
 
