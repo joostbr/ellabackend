@@ -29,7 +29,8 @@ Wat moet er weergegeven worden?
 
 **FEATURE:** “Je verbruik is deze maand …… , dit is gelijk aan vorig jaar”
 
-1. **Piekverbruik analyseren en rapporteren**
+
+2. **Piekverbruik analyseren en rapporteren**
 
 Van waar komt deze?
 
@@ -46,7 +47,8 @@ Wat moet er weergegeven worden?
 - ! Alert-email sturen wanneer hier wordt boven gegaan
 - Advies geven voor wanneer verbruik te verminderen om piekverbruik te verlagen (Uitleg geven dat minder pieken wil zeggen lagere transport- en capaciteitstarieven of geen extra kosten voor onverwacht hoge pieken)
 
-1. **Verbruiksprofiel in lijn brengen met type energiecontract**
+
+3. **Verbruiksprofiel in lijn brengen met type energiecontract**
 
 Van waar komt deze?
 
@@ -60,7 +62,8 @@ Wat moet er weergegeven worden?
 
 - Moet je een maandelijks gemiddeld tarief (variabel, I_Mbelpex) of een dynamish tarief gebruiken?
 
-1. **Contract duur monitoren**
+
+4. **Contract duur monitoren**
 
 Van waar komt deze?
 
@@ -81,7 +84,8 @@ Meer —> Hangt vast aan energiecontract —> Ella moet vragen wanneer het huidi
 - Opgelet: binnen 3 maanden verloopt je contract: Tijd om te kijken voor een nieuw
 - U bent een niet gebonden klant (onder 100mWh), verander gerust
 
-1. **Energieverliezen detecteren**
+
+5. **Energieverliezen detecteren**
 
 Van waar komt deze?
 
@@ -95,9 +99,7 @@ Wat moet er weergegeven worden?
 
 **FEATURE**: “doe een energie scan” 
 
-(next: partner waarmee we werken en die komt kijken) 
-
-1. **Monitoren van dagelijkse energieprijzen**
+6. **Monitoren van dagelijkse energieprijzen**
 
 Van waar komt deze?
 
@@ -110,7 +112,8 @@ Wat moet er weergegeven worden?
 
 Een ledbar onder de avatar? rood —> duur, oranje —> …, groen —> 
 
-1. **Opvolgen van wetgeving**
+
+7. **Opvolgen van wetgeving**
 
 Van waar komt deze?
 
@@ -121,9 +124,9 @@ Wat moet er weergegeven worden?
 - Updates indien relevant
 
 - energie audit - deze is verplicht vanaf een bepaalde drempel (petajoule)
-- 
 
-1. **Injectie analyseren**
+
+8. **Injectie analyseren**
 
 Van waar komt deze?
 
@@ -135,8 +138,9 @@ Wat moet er weergegeven worden?
     - Wanneer is er injectie (variabel, dynamisch of vast is hierbij gekoppeld)
     - vb) negatieve energieprijzen → curtailment
     - vb) advies batterij (premium feature)
+
     
-1. **Energie budget (opstellen en) bewaken**
+9. **Energie budget (opstellen en) bewaken**
 
 Van waar komt deze?
 
@@ -154,8 +158,9 @@ Wat moet er weergegeven worden?
     —> aanpassingen doen gaat de kost naar beneden helpen, Ella zegt: “Let op mijn taken om jouw energiebudget naar beneden te halen” 
     
     Year energy budget onder avatar in het midden zetten 
+
     
-1. **Ella 24/7 bereikbaar**
+10. **Ella 24/7 bereikbaar**
 
 Van waar komt deze?
 
@@ -165,6 +170,7 @@ Wat moet er weergegeven worden?
 
 - Chat-functionaliteit met Ella
     - 
+
 
 **PREMIUM FEATURES**
 
