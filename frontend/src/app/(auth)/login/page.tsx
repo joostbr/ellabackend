@@ -1,11 +1,13 @@
 'use client'
 
+export const dynamic = 'force-dynamic'
+
 import { FormEvent, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { FiMail, FiLock, FiAlertCircle } from 'react-icons/fi'
 import { ClipLoader } from 'react-spinners'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { createClient } from '@/app/utils/supabase/client'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -24,7 +26,7 @@ export default function LoginPage() {
     setError('')
 
     try {
-      const supabase = createClientComponentClient()
+      const supabase = createClient()
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,

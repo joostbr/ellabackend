@@ -2,7 +2,7 @@
 
 import { FormEvent, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { createClient } from '@/app/utils/supabase/client'
 import Link from 'next/link'
 import { FiMail, FiLock, FiUser, FiAlertCircle } from 'react-icons/fi'
 import { ClipLoader } from 'react-spinners'
@@ -42,39 +42,27 @@ export default function RegisterPage() {
     }
     
     try {
-      const supabase = createClientComponentClient()
+      const supabase = createClient()
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
-            name: name,
+            name,
           },
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
         },
       })
 
       if (authError) {
-        console.error('Registration error details:', authError)
-        
-        if (authError.message.includes('rate limit')) {
-          setError('Too many registration attempts. Please wait a few minutes before trying again')
-        } else {
-          setError(authError.message)
-        }
+        setError(authError.message)
         return
       }
 
-      if (!authData.user?.id) {
-        setError('Something went wrong during registration')
-        return
-      }
-
-      // Redirect to login with a success message
-      router.push('/login?registered=true&email=' + encodeURIComponent(email))
+      // Redirect to login page with success message
+      router.push('/login?registered=true')
     } catch (error) {
       console.error('Registration error:', error)
-      setError('Something went wrong. Please try again.')
+      setError('An error occurred during registration')
     } finally {
       setIsLoading(false)
     }
