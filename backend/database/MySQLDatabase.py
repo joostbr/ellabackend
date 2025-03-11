@@ -3,6 +3,7 @@ import pandas as pd
 import mysql.connector
 from mysql.connector import pooling
 from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 import pytz
 import os
 from dotenv import load_dotenv
@@ -42,16 +43,26 @@ class MySQLDatabase:
         self._port = port
         self._pool_size = pool_size
         self._engine = None
+        self._sessionmaker = None
 
 
     @property
     def engine(self):
         if self._engine is None:
             connection_string = (
-                f"mysql://{self._user}:{self._password}@{self._host}:{self._port}/{self._database}?useSSL=false&rewriteBatchedStatements=true"
+                f"mysql+pymysql://{self._user}:{self._password}@{self._host}:{self._port}/{self._database}"
             )
             self._engine = create_engine(connection_string, pool_pre_ping=True)
         return self._engine
+
+    @property
+    def sessionmaker(self):
+        if self._sessionmaker is None:
+            self._sessionmaker = sessionmaker(bind=self.engine)
+        return self._sessionmaker
+
+    def new_session(self):
+        return self.sessionmaker()
 
     def close(self):
         if self._engine is not None:
