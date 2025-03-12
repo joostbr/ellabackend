@@ -78,13 +78,19 @@ class TimeSeriesRepository(Repository):
 
 def main():
 
-   res = TimeSeriesRepository().find_all()
-   print(res)
+    res = TimeSeriesRepository().find_all()
+    print(res)
 
-   res = TimeSeriesPriceRepository().find_by_timeseries(20)
-   res = TimeSeriesPriceRepository().find_between_as_df(20, pytz.timezone("Europe/Brussels").localize(datetime(2025,1,1)), pytz.timezone("Europe/Brussels").localize(datetime(2025,2,1)))
-   print(res)
+    #res = TimeSeriesPriceRepository().find_by_timeseries(20)
+    #res = TimeSeriesPriceRepository().find_between_as_df(20, pytz.timezone("Europe/Brussels").localize(datetime(2025,1,1)), pytz.timezone("Europe/Brussels").localize(datetime(2025,2,1)))
+    #print(res)
 
+
+    print( TimeSeriesPriceRepository().bulk_upsert([
+    {"tsid": 24, "utcstart": 1640995200//60, "price": 100.0, "recordtime": datetime.now()},
+    {"tsid": 24, "utcstart": 1640995200//60, "price": 101.0, "recordtime": datetime.now()},
+    {"tsid": 24, "utcstart": 1640995200//60, "price": 102.0, "recordtime": datetime.now()},
+    ]))
 
 if __name__ == "__main__":
     main()

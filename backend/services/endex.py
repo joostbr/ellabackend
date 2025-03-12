@@ -7,6 +7,7 @@ import numpy as np
 import pytz
 
 from backend.database.MySQLDatabase import MySQLDatabase
+from backend.core.timeseriesprice import TimeSeriesPriceRepository
 from datetime import datetime
 
 DATA_FOLDER = "data"  # Folder to save downloaded PDF file
@@ -84,6 +85,63 @@ class EndexDownloader:
         return df
 
 
+    def save_to_database(self, df):
+
+        df.set_index('Month', inplace=True)
+
+        # Step 2: Expand to 15-minute intervals with repeated values
+
+        start_date = df.index.min()
+        end_date = df.index.max() + pd.offsets.MonthEnd(0)  # Full last month
+        time_range = pd.date_range(start=start_date, end=end_date, freq='15min', tz='Europe/Brussels')
+        df_15min = df.reindex(time_range).ffill()
+        df_15min.reset_index(inplace=True)
+        df_15min.rename(columns={'index': 'Timestamp'}, inplace=True)
+
+        # Step 3: Prepare data for TimeSeriesPriceRepository
+        # For Endex101 (tsid=101)
+        insert_data_101 = [
+            {
+                'tsid': 24,
+                'utcstart': int(row['Timestamp'].timestamp() // 60),  # Convert to minutes
+                'price': float(row['Endex101']),  # Convert np.float64 to Python float
+                'recordtime': datetime.now()
+            }
+            for _, row in df_15min.iterrows()
+        ]
+
+        # For Endex103 (tsid=103)
+        insert_data_103 = [
+            {
+                'tsid': 25,
+                'utcstart': int(row['Timestamp'].timestamp() // 60),
+                'price': float(row['Endex103']),
+                'recordtime': datetime.now()
+            }
+            for _, row in df_15min.iterrows()
+        ]
+
+        # Step 4: Save to the database using TimeSeriesPriceRepository
+        repo = TimeSeriesPriceRepository()
+
+        # Insert in batches to manage memory (optional, recommended for ~113,760 rows)
+        batch_size = 10000
+        print(f"Total rows to insert: {len(insert_data_101)}")
+
+        # Save Endex101
+        for i in range(0, len(insert_data_101), batch_size):
+            batch = insert_data_101[i:i + batch_size]
+            count = repo.bulk_upsert(batch)
+            print(f"Inserted/Updated {count} rows for Endex101 (tsid=101), batch {i // batch_size + 1}")
+
+        # Save Endex103
+        for i in range(0, len(insert_data_103), batch_size):
+            batch = insert_data_103[i:i + batch_size]
+            count = repo.bulk_upsert(batch)
+            print(f"Inserted/Updated {count} rows for Endex103 (tsid=103), batch {i // batch_size + 1}")
+
+        print("Data successfully saved to ts_prices table.")
+
     def run(self):
 
         pdf_url = "https://www.creg.be/sites/default/files/assets/Tarifs/ElectricityQuotations-NL.pdf"
@@ -102,20 +160,8 @@ class EndexDownloader:
         if pdf_text:
             # Parse the values from the extracted text
             endex_df = self.parse_endex_values(pdf_text)
-
-            if len(endex_df)>0:
-                # Save to CSV and get DataFrame
-                endex_df.to_csv(os.path.join(DATA_FOLDER,"endex_data.csv"), index=False)
-
-                # Display a sample of the data
-                print("\nSample of parsed data (first 5 rows):")
-                print(endex_df.head())
-
-                # Optionally, filter and show only Endex 101 values
-                print("\nEndex 101 values only (first 5 rows):")
-                print(endex_df[["Month", "Endex101"]].head())
-            else:
-                print("Failed to parse Endex values from the extracted text.")
+            # Save it to the database
+            self.save_to_database(endex_df)
         else:
             print("Failed to extract text from the PDF.")
 
