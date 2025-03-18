@@ -147,7 +147,7 @@ class Elion:
         df = pd.merge(df, soc_data, on="UTCTIME")
 
         # Convert UTCTIME to 15-minute intervals
-        df["UTCTIME"] = df["UTCTIME"].dt.floor("15T")
+        df["UTCTIME"] = df["UTCTIME"].dt.floor("15min")
 
         agg_rules = {col: "sum" for col in df.columns if col not in ["UTCTIME", "SOC"]}
         agg_rules["SOC"] = "last"  # Keep last value of SOC in each 15-minute interval
