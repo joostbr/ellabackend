@@ -155,7 +155,6 @@ class Elion:
 
         df_agg = df.groupby("UTCTIME").agg(agg_rules).reset_index()
 
-        print("df",df_agg)
 
         return df_agg
 
@@ -206,7 +205,3 @@ class Elion:
             self.store_data(site_id, df)
 
 
-
-e = Elion()
-#e.create_timeseries()
-e.run()
