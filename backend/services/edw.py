@@ -54,6 +54,7 @@ class DataPoint:
 class EDWApi:
 
     def __init__(self):
+        #self.base_url = "http://demo.amplifino.com:8080"
         self.base_url = "http://localhost:8080"
 
     def get_vaults(self):
