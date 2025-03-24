@@ -6,9 +6,9 @@ import base64
 import pandas as pd
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
-from backend.services.edw import DataPoint, EDWApi
+from backend.services.edw import DataPoint, TimeSeries, EDWApi
 
-SITE_IDS = [343] # kiosun
+SITE_IDS = [341,342,343] # kiosun
 
 load_dotenv()
 
@@ -131,20 +131,27 @@ class Elion:
         })["FLEX_DATA"])
         flex_data["UTCTIME"] = pd.to_datetime(flex_data["UTCTIME"])
 
-        soc_data = pd.DataFrame(self.get_data(self.token, "/box_data/soc", {
-            "fromutc": "2025-01-01 00:00",
-            "touc": "2025-01-02 00:00",
-            "time_format": "%Y-%m-%d %H:%M",
-            "site_id": site_id,
-        })["SOC_DATA"])
-        soc_data["UTCTIME"] = pd.to_datetime(soc_data["UTCTIME"])
+        try:
+            soc_data = pd.DataFrame(self.get_data(self.token, "/box_data/soc", {
+                "fromutc": "2025-01-01 00:00",
+                "touc": "2025-01-02 00:00",
+                "time_format": "%Y-%m-%d %H:%M",
+                "site_id": site_id,
+            })["SOC_DATA"])
+            soc_data["UTCTIME"] = pd.to_datetime(soc_data["UTCTIME"])
+        except BaseException as e:
+            print("SOC data not found")
+            soc_data = None
 
         df = pd.merge(grid_data, cons_data, on="UTCTIME")
         df = pd.merge(df, prod_data, on="UTCTIME")
         df = pd.merge(df, prod_curt_data, on="UTCTIME")
         df = pd.merge(df, prod_uncurt_data, on="UTCTIME")
         df = pd.merge(df, flex_data, on="UTCTIME")
-        df = pd.merge(df, soc_data, on="UTCTIME")
+        if soc_data is not None:
+            df = pd.merge(df, soc_data, on="UTCTIME")
+        else:
+            df["SOC"] = 0.0
 
         # Convert UTCTIME to 15-minute intervals
         df["UTCTIME"] = df["UTCTIME"].dt.floor("15min")
@@ -152,34 +159,35 @@ class Elion:
         agg_rules = {col: "sum" for col in df.columns if col not in ["UTCTIME", "SOC"]}
         agg_rules["SOC"] = "last"  # Keep last value of SOC in each 15-minute interval
 
-
         df_agg = df.groupby("UTCTIME").agg(agg_rules).reset_index()
 
 
         return df_agg
 
-    def create_timeseries(self):
+    def create_timeseries(self, site_id):
         timeseries = self.edw_api.get_timeseries()
-        for site_id in SITE_IDS:
-            ts = next(filter(lambda x: x.name == f"elion/{site_id}", timeseries), None)
-            if not ts:
-                vault = next(filter(lambda x: x.name== "elion", self.edw_api.get_vaults()), None)
-                if vault:
-                    res = self.edw_api.create_timeseries(vault.id, f"elion/{site_id}", "PT15M", None, None, None, None)
-                    print(res)
+        ts = next(filter(lambda x: x.name == f"elion/{site_id}", timeseries), None)
+        if not ts:
+            vault = next(filter(lambda x: x.name== "elion", self.edw_api.get_vaults()), None)
+            if vault:
+                res = self.edw_api.create_timeseries(vault.id, f"elion/{site_id}", "PT15M", None, None, None, None)
+                print("created timeseries", res)
+                return res
 
-    def find_timeseries_id(self, site_id):
+    def find_or_create_timeseries(self, site_id):
         timeseries = self.edw_api.get_timeseries()
         ts = next(filter(lambda x: x.name == f"elion/{site_id}", timeseries), None)
         if ts:
-            return ts.id
+            return ts
         else:
-            print(f"Timeseries for site {site_id} not found")
-            return None
+            print(f"Timeseries for site {site_id} not found, creating...")
+            ts_json = self.create_timeseries(site_id)
+            ts_json["firstTime"] = None
+            ts_json["lastTime"] = None
+            return TimeSeries(**ts_json)
 
 
-    def store_data(self, site_id, df):
-        ts_id = self.find_timeseries_id(site_id)
+    def store_data(self, ts, df):
         insert_data = [
             DataPoint(
                 start= row["UTCTIME"],
@@ -194,14 +202,18 @@ class Elion:
                             row['SOC']])
             for _, row in df.iterrows()
         ]
-        self.edw_api.store_datapoints(ts_id, insert_data)
+        self.edw_api.store_datapoints(ts.id, insert_data)
 
     def run(self):
         fromutc = datetime.now(pytz.UTC)-timedelta(days=30)
         toutc = datetime.now(pytz.UTC)
         for site_id in self.site_ids:
-            print(site_id)
+            ts = self.find_or_create_timeseries(site_id)
+            if ts.lastTime is not None:
+                fromutc = ts.lastTime - timedelta(minutes=30)
+            print(f"Fetching data for site {site_id} from {fromutc} to {toutc}")
             df = self.get_site_data(site_id, fromutc, toutc)
-            self.store_data(site_id, df)
+            self.store_data(ts, df)
 
 
+Elion().run()

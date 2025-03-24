@@ -33,11 +33,11 @@ class Vault:
 class TimeSeries:
     id: int
     name: str
-    firstTime: str
-    lastTime: str
+    firstTime: datetime
+    lastTime: datetime
     period: str
-    createdAt: str
-    modifiedAt: str
+    createdAt: datetime
+    modifiedAt: datetime
     vaultName: str
     fieldNames: List[str]
 
@@ -96,11 +96,11 @@ class EDWApi:
             TimeSeries(
                 id=item["id"],
                 name=item["name"],
-                firstTime=item.get("firstTime",None),
-                lastTime=item.get("lastTime",None),
+                firstTime=datetime.fromisoformat(item.get("firstTime")) if item.get("firstTime",None) else None,
+                lastTime=datetime.fromisoformat(item.get("lastTime")) if item.get("lastTime",None) else None,
                 period=item["period"],
-                createdAt=item["createdAt"],
-                modifiedAt=item["modifiedAt"],
+                createdAt=datetime.fromisoformat(item["createdAt"]),
+                modifiedAt=datetime.fromisoformat(item["modifiedAt"]),
                 vaultName=item["vaultName"],
                 fieldNames=item["fieldNames"]
             ) for item in json
