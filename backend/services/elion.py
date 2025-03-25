@@ -191,14 +191,14 @@ class Elion:
         insert_data = [
             DataPoint(
                 start= row["UTCTIME"],
-                values= [row['GRID_OFFTAKE'],
-                         row['GRID_INJECT'],
-                            row['CONSUMPTION'],
-                            row['PRODUCTION'],
-                            row['CURTAILED_PRODUCTION'],
-                            row['UNCURTAILED_PRODUCTION'],
-                            row['FLEX_CHARGE'],
-                            row['FLEX_DISCHARGE'],
+                values= [row['GRID_OFFTAKE'] * 1000,
+                         row['GRID_INJECT'] * 1000,
+                            row['CONSUMPTION'] * 1000,
+                            row['PRODUCTION'] * 1000,
+                            row['CURTAILED_PRODUCTION'] * 1000,
+                            row['UNCURTAILED_PRODUCTION'] * 1000,
+                            row['FLEX_CHARGE']  * 1000,
+                            row['FLEX_DISCHARGE'] * 1000,
                             row['SOC']])
             for _, row in df.iterrows()
         ]
