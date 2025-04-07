@@ -54,8 +54,8 @@ class DataPoint:
 class EDWApi:
 
     def __init__(self):
-        #self.base_url = "http://demo.amplifino.com:8080"
-        self.base_url = "http://localhost:8080"
+        self.base_url = "http://demo.amplifino.com:8080"
+        #self.base_url = "http://localhost:8080"
 
     def get_vaults(self):
         url = f"{self.base_url}/vaults"
@@ -120,6 +120,11 @@ class EDWApi:
             } for dp in datapoints
         ]
         response = requests.post(url, json=data)
+        return response.json()
+
+    def get_datapoints(self, ts_id: int, from_dt: datetime, to_dt: datetime):
+        url = f"{self.base_url}/timeseries/{ts_id}/values"
+        response = requests.get(url, params={"from": self.isotime(from_dt), "to": self.isotime(to_dt)})
         return response.json()
 
     def create_timeseries(self, vault_id: int, name: str, period: str, customer: str, cluster: str, kind: str, section: str):
