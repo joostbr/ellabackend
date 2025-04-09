@@ -8,6 +8,8 @@ import pytz
 
 from backend.database.MySQLDatabase import MySQLDatabase
 from backend.core.timeseriesprice import TimeSeriesPriceRepository
+from backend.services.edw import DataPoint, TimeSeries, EDWApi
+
 from datetime import datetime
 
 DATA_FOLDER = "data"  # Folder to save downloaded PDF file
@@ -16,6 +18,7 @@ class EndexDownloader:
 
     def __init__(self):
         self.database = MySQLDatabase.instance()
+        self.edw_api = EDWApi()
 
     def download_pdf(self, url, pdf_file):
         """Download the PDF file from the URL to the local path."""
@@ -92,55 +95,69 @@ class EndexDownloader:
         # Step 2: Expand to 15-minute intervals with repeated values
 
         start_date = df.index.min()
-        end_date = df.index.max() + pd.offsets.MonthEnd(0)  # Full last month
+        end_date = df.index.max() + pd.offsets.MonthEnd(0) + pd.Timedelta(days=1) - pd.Timedelta(minutes=15) # Full last month
         time_range = pd.date_range(start=start_date, end=end_date, freq='15min', tz='Europe/Brussels')
         df_15min = df.reindex(time_range).ffill()
         df_15min.reset_index(inplace=True)
         df_15min.rename(columns={'index': 'Timestamp'}, inplace=True)
+        df_15min["UTCTIME"] = df_15min["Timestamp"].dt.tz_convert('UTC')
 
-        # Step 3: Prepare data for TimeSeriesPriceRepository
-        # For Endex101 (tsid=101)
+        # For Endex101
+
+        ts_endex101 = self.find_or_create_timeseries("101")
+
         insert_data_101 = [
-            {
-                'tsid': 24,
-                'utcstart': int(row['Timestamp'].timestamp() // 60),  # Convert to minutes
-                'price': float(row['Endex101']),  # Convert np.float64 to Python float
-                'recordtime': datetime.now()
-            }
+            DataPoint(
+                start= row["UTCTIME"],
+                values= [row['Endex101'] ]
+            )
             for _, row in df_15min.iterrows()
         ]
 
-        # For Endex103 (tsid=103)
+        self.edw_api.store_datapoints(ts_endex101.id, insert_data_101)
+
+        # For Endex103
+
+        ts_endex103 = self.find_or_create_timeseries("103")
+
+        self.edw_api.store_datapoints(ts_endex101.id, insert_data_101)
+
         insert_data_103 = [
-            {
-                'tsid': 25,
-                'utcstart': int(row['Timestamp'].timestamp() // 60),
-                'price': float(row['Endex103']),
-                'recordtime': datetime.now()
-            }
+            DataPoint(
+                start=row["UTCTIME"],
+                values=[row['Endex103']]
+            )
             for _, row in df_15min.iterrows()
         ]
 
-        # Step 4: Save to the database using TimeSeriesPriceRepository
-        repo = TimeSeriesPriceRepository()
-
-        # Insert in batches to manage memory (optional, recommended for ~113,760 rows)
-        batch_size = 10000
-        print(f"Total rows to insert: {len(insert_data_101)}")
-
-        # Save Endex101
-        for i in range(0, len(insert_data_101), batch_size):
-            batch = insert_data_101[i:i + batch_size]
-            count = repo.bulk_upsert(batch)
-            print(f"Inserted/Updated {count} rows for Endex101 (tsid=101), batch {i // batch_size + 1}")
-
-        # Save Endex103
-        for i in range(0, len(insert_data_103), batch_size):
-            batch = insert_data_103[i:i + batch_size]
-            count = repo.bulk_upsert(batch)
-            print(f"Inserted/Updated {count} rows for Endex103 (tsid=103), batch {i // batch_size + 1}")
+        self.edw_api.store_datapoints(ts_endex103.id, insert_data_103)
 
         print("Data successfully saved to ts_prices table.")
+
+
+    def create_timeseries(self, ts_name):
+        timeseries = self.edw_api.get_timeseries()
+
+        ts = next(filter(lambda x: x.name == ts_name, timeseries), None)
+        if not ts:
+            res = self.edw_api.create_timeseries(ts_name, "prices", "PT15M", None, None, None, None)
+            print("created timeseries", res)
+            return res
+
+    def find_or_create_timeseries(self, endex_code: str):
+        timeseries = self.edw_api.get_timeseries()
+        ts_name = f"endex/{endex_code}/15"
+        ts = next(filter(lambda x: x.name == ts_name, timeseries), None)
+        if ts:
+            return ts
+        else:
+            print(f"Timeseries for endex {endex_code} not found, creating...")
+            ts_json = self.create_timeseries(ts_name)
+            ts_json["firstTime"] = None
+            ts_json["lastTime"] = None
+            return TimeSeries(**ts_json)
+
+
 
     def run(self):
 
@@ -167,4 +184,7 @@ class EndexDownloader:
 
 
 if __name__ == "__main__":
-    EndexDownloader().run()
+    e = EndexDownloader()
+    e.run()
+
+

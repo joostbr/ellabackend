@@ -54,7 +54,8 @@ class DataPoint:
 class EDWApi:
 
     def __init__(self):
-        self.base_url = "http://demo.amplifino.com:8080"
+        #self.base_url = "http://demo.amplifino.com:8080"
+        self.base_url = "http://10.64.88.197:8080"
         #self.base_url = "http://localhost:8080"
 
     def get_vaults(self):
@@ -108,17 +109,20 @@ class EDWApi:
         ]
 
     def isotime(self, dt):
-        return dt.isoformat(timespec='seconds')+"Z"
+        return dt.isoformat(timespec='seconds')
 
 
     def store_datapoints(self, ts_id: int, datapoints: List[DataPoint]):
         url = f"{self.base_url}/timeseries/{ts_id}/values"
-        data = [
-            {
-                "start": self.isotime(dp.start),
-                "values": dp.values
-            } for dp in datapoints
-        ]
+        if len(datapoints)>0 and not isinstance(datapoints[0].start,str):
+            data = [
+                {
+                    "start": self.isotime(dp.start),
+                    "values": dp.values
+                } for dp in datapoints
+            ]
+        else:
+            data = datapoints
         response = requests.post(url, json=data)
         return response.json()
 
@@ -127,16 +131,31 @@ class EDWApi:
         response = requests.get(url, params={"from": self.isotime(from_dt), "to": self.isotime(to_dt)})
         return response.json()
 
-    def create_timeseries(self, vault_id: int, name: str, period: str, customer: str, cluster: str, kind: str, section: str):
+    def create_timeseries(self, ts_name: str, vault_name: str, period: str, customer: str, cluster: str, kind: str, section: str):
         url = f"{self.base_url}/timeseries"
         data = {
-            "vaultId": vault_id,
-            "name": name,
+            "vault": {"name": vault_name},
+            "name": ts_name,
             "period": period,
             "customer": customer,
             "cluster": cluster,
             "kind": kind,
             "section": section
+        }
+        response = requests.post(url, json=data)
+        return response.json()
+
+    def create_recordspec(self, name:str, field_specs: List[FieldSpec]):
+        url = f"{self.base_url}/recordspecs"
+        return requests.post(url, json={"name": name, "fieldSpecs": field_specs}).json()
+
+    def create_vault(self, name: str, recordspec_name: int, partitioned: bool = False, zone_id: str = "Europe/Brussels"):
+        url = f"{self.base_url}/vaults"
+        data = {
+            "name": name,
+            "recordSpec": {"name": recordspec_name},
+            "partitioned": partitioned,
+            "zoneId": zone_id
         }
         response = requests.post(url, json=data)
         return response.json()

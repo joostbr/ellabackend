@@ -161,6 +161,7 @@ class Elion:
 
         df_agg = df.groupby("UTCTIME").agg(agg_rules).reset_index()
 
+        df_agg["UTCTIME"] = df_agg["UTCTIME"].dt.tz_localize("UTC")
 
         return df_agg
 
@@ -215,5 +216,3 @@ class Elion:
             df = self.get_site_data(site_id, fromutc, toutc)
             self.store_data(ts, df)
 
-
-Elion().run()
