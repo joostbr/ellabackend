@@ -1,6 +1,5 @@
+import pandas as pd
 import requests
-from dataclasses import dataclass
-
 from dataclasses import dataclass
 from typing import List, Union
 from datetime import datetime
@@ -54,8 +53,8 @@ class DataPoint:
 class EDWApi:
 
     def __init__(self):
-        #self.base_url = "http://demo.amplifino.com:8080"
-        self.base_url = "http://10.64.88.197:8080"
+        self.base_url = "http://demo.amplifino.com:8080"
+        #self.base_url = "http://10.64.88.197:8080"  # grafana.amplifino.com (vpn ip address)
         #self.base_url = "http://localhost:8080"
 
     def get_vaults(self):
@@ -114,7 +113,7 @@ class EDWApi:
 
     def store_datapoints(self, ts_id: int, datapoints: List[DataPoint]):
         url = f"{self.base_url}/timeseries/{ts_id}/values"
-        if len(datapoints)>0 and not isinstance(datapoints[0].start,str):
+        if len(datapoints)>0 and not isinstance(datapoints[0].start, str):
             data = [
                 {
                     "start": self.isotime(dp.start),
@@ -122,12 +121,28 @@ class EDWApi:
                 } for dp in datapoints
             ]
         else:
-            data = datapoints
+            data = [
+                {
+                    "start": dp.start,
+                    "values": dp.values
+                } for dp in datapoints
+            ]
         response = requests.post(url, json=data)
         return response.json()
 
-    def get_datapoints(self, ts_id: int, from_dt: datetime, to_dt: datetime):
+    def store_dataframe(self, ts_id: int, df: pd.DataFrame, time_col:str, val_cols: Union[str, List[str]] = None):
         url = f"{self.base_url}/timeseries/{ts_id}/values"
+        data = [
+            {
+                "start": self.isotime(row[time_col]),
+                "values": row[val_cols].tolist() if isinstance(val_cols, list) else [row[val_cols]]
+            } for _, row in df.iterrows()
+        ]
+        response = requests.post(url, json=data)
+        return response.json()
+
+    def get_datapoints(self, ts: TimeSeries, from_dt: datetime, to_dt: datetime):
+        url = f"{self.base_url}/timeseries/{ts.id}/values"
         response = requests.get(url, params={"from": self.isotime(from_dt), "to": self.isotime(to_dt)})
         return response.json()
 
@@ -161,4 +176,41 @@ class EDWApi:
         return response.json()
 
 
+
+if __name__ == "__main__":
+    e = EDWApi()
+    quantile_fields = ["QMIN"]+[f"Q{int(q * 1000):03d}" for q in [x * 0.025 for x in range(1, 399)] if int(q * 1000) < 1000]+["QMAX","MEAN"]
+    print(quantile_fields)
+
+    '''
+    fieldspecs = [{"name": x, "type": "DECIMAL", "precision": 9, "scale": 3} for x in quantile_fields]
+    data = {
+        "name": "qforecast",
+        "fieldSpecs":fieldspecs
+    }
+
+    res = e.create_recordspec(name='qforecast', field_specs=fieldspecs)
+    print(res)
+
+    res = e.create_vault(name='qforecast', recordspec_name="qforecast", partitioned=False)
+
+    res = e.create_timeseries("amplisol/BE/DA", "qforecast", "PT15M", None, None, None, None)
+    res = e.create_timeseries("amplisol/BE/DA6PM", "qforecast", "PT15M", None, None, None, None)
+    res = e.create_timeseries("amplisol/BE/MR", "qforecast", "PT15M", None, None, None, None)
+    '''
+    #print(res)
+
+    da_ts = next(filter(lambda x: x.name=="amplisol/BE/DA", e.get_timeseries()),None)
+
+    dp = DataPoint(start="2023-10-01T00:00:00Z", values=[0 for x in range(42)])
+
+    d = {col: 0 for col in quantile_fields}
+    d["UTCTIME"] = pytz.utc.localize(datetime(2023, 10, 1, 0, 0, 0))
+    df = pd.DataFrame([d])
+
+    res = e.store_datapoints(da_ts.id, [dp])
+    # or :
+    res = e.store_dataframe(da_ts.id, df, time_col="UTCTIME", val_cols=quantile_fields)
+
+    print(res)
 

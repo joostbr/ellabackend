@@ -16,6 +16,7 @@ EDW_CONFIG = {
     "user": os.getenv("DB_USER"),
     "password": os.getenv("DB_PASSWORD"),
     "database": os.getenv("DB_DATABASE"),
+    "use_ssl": True if os.getenv("DB_USE_SSL")=="true" else False
 }
 
 
@@ -35,12 +36,13 @@ class MySQLDatabase:
         if MySQLDatabase._instance is not None:
             MySQLDatabase._instance.close()
 
-    def __init__(self, host, user, password, database, port=3306, pool_size=2):
+    def __init__(self, host, user, password, database, use_ssl, port=3306, pool_size=2):
         self._host = host
         self._user = user
         self._password = password
         self._database = database
         self._port = port
+        self._use_ssl = use_ssl
         self._pool_size = pool_size
         self._engine = None
         self._sessionmaker = None
@@ -52,7 +54,16 @@ class MySQLDatabase:
             connection_string = (
                 f"mysql+pymysql://{self._user}:{self._password}@{self._host}:{self._port}/{self._database}"
             )
-            self._engine = create_engine(connection_string, pool_pre_ping=True)
+            if self._use_ssl:
+                # Dummy SSL configuration
+                ssl_args = {
+                    "ssl": {
+                        "ssl": True  # Enable SSL without specifying certificates
+                    }
+                }
+                self._engine = create_engine(connection_string, connect_args=ssl_args, pool_pre_ping=True)
+            else:
+                self._engine = create_engine(connection_string, pool_pre_ping=True)
         return self._engine
 
     @property
