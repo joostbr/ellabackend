@@ -88,14 +88,14 @@ class ContractTypeEvaluation:
 
 
     def _build_digital_meter_sql(self, ts, price_sql, join_sql):
-        sql = (f"""select from_unixtime(m.utcstart * 60) as UTCTIME,m.localstart as TIME, (({self.price_scaler}*p.price+{self.price_adder})/1000)*m.offtake as OFFTAKE_COST, (({self.price_scaler}*p.price - {self.price_adder})/1000)*m.injection as INJECTION_PROFIT from 
+        sql = (f"""select from_unixtime(m.utcstart * 60) as UTCTIME,m.localstart as TIME, (({self.price_offtake_scaler}*p.price+{self.price_offtake_adder})/1000)*m.offtake as OFFTAKE_COST, (({self.price_injection_scaler}*p.price - {self.price_injection_adder})/1000)*m.injection as INJECTION_PROFIT from 
                       ts_digital_meter m join {price_sql}
                       on m.utcstart = p.utcstart {join_sql if join_sql else ''}
                       where m.tsid = {ts.id} and m.utcstart >= {int(self.fromdt.timestamp() / 60)} and m.utcstart < {int(self.todt.timestamp() / 60)}
                       order by m.utcstart""")
         return sql
 
-    def evaluate_digital_meter(self, ts, endex101, endex103, epex):
+    def analyze_digital_meter(self, ts, endex101, endex103, epex):
 
         epex_sql, join_epex_sql = self._get_epex_sql(epex)
         avg_epex_sql, join_avg_epex_sql = self._get_avg_epex_sql(epex)
@@ -199,7 +199,7 @@ class ContractTypeEvaluation:
 
 
 
-    def evaluate(self):
+    def analyze(self):
         from_utc = int(self.fromdt.astimezone(pytz.utc).timestamp()/60)
         to_utc = int(self.todt.astimezone(pytz.utc).timestamp()/60)
 
@@ -212,10 +212,10 @@ class ContractTypeEvaluation:
         ean_ts = list(filter(lambda x: x.vaultName == "digital_meter", all_ts))
         for each in ean_ts:
             print(ean_ts)
-            self.evaluate_digital_meter(ts=each, endex101=endex101, endex103=endex103, epex=epex15)
+            self.analyze_digital_meter(ts=each, endex101=endex101, endex103=endex103, epex=epex15)
 
 
 
 
 
-ContractTypeEvaluation(datetime.now(pytz.UTC)-timedelta(days=365), datetime.now(pytz.UTC)).evaluate()
+ContractTypeEvaluation(datetime.now(pytz.UTC)-timedelta(days=365), datetime.now(pytz.UTC)).analyze()

@@ -53,8 +53,8 @@ class DataPoint:
 class EDWApi:
 
     def __init__(self):
-        #self.base_url = "http://demo.amplifino.com:8080"
-        self.base_url = "http://10.64.88.197:8080"  # grafana.amplifino.com (vpn ip address)
+        self.base_url = "http://demo.amplifino.com:8080"
+        #self.base_url = "http://10.64.88.197:8080"  # grafana.amplifino.com (vpn ip address)
         #self.base_url = "http://localhost:8080"
 
     def get_vaults(self):
@@ -200,11 +200,12 @@ if __name__ == "__main__":
     '''
     #print(res)
 
-    da_ts = next(filter(lambda x: x.name=="amplisol/BE/DA", e.get_timeseries()),None)
+    #da_ts = next(filter(lambda x: x.name=="amplisol/BE/DA", e.get_timeseries()),None)
+    da_ts = next(filter(lambda x: x.name == "profile/128187", e.get_timeseries()), None)
 
-    dp = DataPoint(start="2023-10-01T00:00:00Z", values=[0 for x in range(42)])
+    dp = DataPoint(start="2023-10-01T00:00:00Z", values=[0 for x in range(2)])
 
-    d = {col: 0 for col in quantile_fields}
+    d = {col: 0 for col in ["consumption","production"]}
     d["UTCTIME"] = pytz.utc.localize(datetime(2023, 10, 1, 0, 0, 0))
     df = pd.DataFrame([d])
 
