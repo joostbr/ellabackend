@@ -9,3 +9,4 @@ mysql-connector==2.2.9
 mysqlclient==2.2.7
 python-dotenv==1.0.1
 requests
+astral

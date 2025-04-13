@@ -35,7 +35,7 @@ class PeakAnalysis:
                 SELECT
                     dm.tsid,
                     DATE_FORMAT(dm.localstart, '%%Y-%%m-01') AS month,
-                    dm.localstart AS peak_timestamp,
+                    from_unixtime(dm.utcstart*60) AS peak_timestamp,
                     dm.offtake
                 FROM edw.ts_digital_meter dm
                 JOIN monthly_peaks mp
@@ -43,17 +43,37 @@ class PeakAnalysis:
                     AND DATE_FORMAT(dm.localstart, '%%Y-%%m') = mp.month
                     AND dm.offtake = mp.peak_offtake
             )
-            SELECT tsid, month, MAX(offtake) AS peak_offtake, MIN(peak_timestamp) AS peak_timestamp
+            SELECT tsid, month, MAX(offtake)*4 AS peak_offtake, MIN(peak_timestamp) AS peak_timestamp
             FROM peak_rows
             GROUP BY tsid, month
             ORDER BY tsid, month DESC;
             """
         df = self.database.query(sql=sql)
+        df['month'] = pd.to_datetime(df['month'])
         print(df)
+        return df
+
+    def store_peak_statistics(self, df):
+        stats = []
+        for index, row in df.iterrows():
+            stat = Statistics(
+                siteid="00000",
+                tsid=row["tsid"],
+                value=row["peak_offtake"],
+                description="Peak Offtake (kW)",
+                calculationtime=datetime.now(),
+                fromutc=pytz.timezone("Europe/Brussels").localize(row["month"]).astimezone(pytz.utc),
+                toutc= pytz.timezone("Europe/Brussels").localize(row["month"]+pd.DateOffset(months=1)).astimezone(pytz.utc),
+                statkey="peak/offtake",
+                eventtimeutc=row["peak_timestamp"],
+            )
+            stats.append(stat)
+        self.statistics_repo.bulk_upsert([s.__dict__ for s in stats])
 
     def analyze(self):
         # Implement visualization logic
-        self.analyze_peaks()
+        df = self.analyze_peaks()
+        self.store_peak_statistics(df)
 
 if __name__ == "__main__":
 

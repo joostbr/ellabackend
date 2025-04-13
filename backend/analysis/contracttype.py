@@ -118,6 +118,7 @@ class ContractTypeEvaluation:
                 calculationtime=now,
                 fromutc=self.fromdt,
                 toutc=self.todt,
+                eventtimeutc=None
             ),
             Statistics(
                 siteid='00000',
@@ -128,6 +129,7 @@ class ContractTypeEvaluation:
                 calculationtime=now,
                 fromutc=self.fromdt,
                 toutc=self.todt,
+                eventtimeutc=None
             ),
             Statistics(
                 siteid='00000',
@@ -138,6 +140,7 @@ class ContractTypeEvaluation:
                 calculationtime=now,
                 fromutc=self.fromdt,
                 toutc=self.todt,
+                eventtimeutc=None
 
             ),
             Statistics(
@@ -148,7 +151,8 @@ class ContractTypeEvaluation:
                 description='Offtake cost according to ENDEX 103',
                 calculationtime=now,
                 fromutc=self.fromdt,
-                toutc=self.todt
+                toutc=self.todt,
+                eventtimeutc=None
             ),
             # Injection profit stats
             Statistics(
@@ -160,6 +164,7 @@ class ContractTypeEvaluation:
                 calculationtime=now,
                 fromutc=self.fromdt,
                 toutc=self.todt,
+                eventtimeutc=None
             ),
             Statistics(
                 siteid='00000',
@@ -170,6 +175,7 @@ class ContractTypeEvaluation:
                 calculationtime=now,
                 fromutc=self.fromdt,
                 toutc=self.todt,
+                eventtimeutc=None
             ),
             Statistics(
                 siteid='00000',
@@ -180,6 +186,7 @@ class ContractTypeEvaluation:
                 calculationtime=now,
                 fromutc=self.fromdt,
                 toutc=self.todt,
+                eventtimeutc=None
             ),
             Statistics(
                 siteid='00000',
@@ -190,6 +197,7 @@ class ContractTypeEvaluation:
                 calculationtime=now,
                 fromutc=self.fromdt,
                 toutc=self.todt,
+                eventtimeutc=None
             )
         ]
 
@@ -215,7 +223,5 @@ class ContractTypeEvaluation:
             self.analyze_digital_meter(ts=each, endex101=endex101, endex103=endex103, epex=epex15)
 
 
-
-
-
-ContractTypeEvaluation(datetime.now(pytz.UTC)-timedelta(days=365), datetime.now(pytz.UTC)).analyze()
+if __name__ == "__main__":
+    ContractTypeEvaluation(datetime.now(pytz.UTC)-timedelta(days=365), datetime.now(pytz.UTC)).analyze()

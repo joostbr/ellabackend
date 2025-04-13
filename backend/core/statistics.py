@@ -22,6 +22,7 @@ class Statistics(Base):
     fromutc = Column(DateTime, nullable=True)
     toutc = Column(DateTime, nullable=True)
     statkey = Column(String(100), nullable=False)
+    eventtimeutc = Column(DateTime, nullable=True)
 
 
 
@@ -65,14 +66,15 @@ class StatisticsRepository(Repository):
         with self.new_session() as session:
             val = session.execute(
                 text("""
-                INSERT INTO nett.statistics (siteid, tsid, value, description, calculationtime, fromutc, toutc, statkey)
-                VALUES (:siteid, :tsid, :value, :description, :calculationtime, :fromutc, :toutc, :statkey)
+                INSERT INTO nett.statistics (siteid, tsid, value, description, calculationtime, fromutc, toutc, statkey, eventtimeutc)
+                VALUES (:siteid, :tsid, :value, :description, :calculationtime, :fromutc, :toutc, :statkey, :eventtimeutc)
                 ON DUPLICATE KEY UPDATE
                     value = VALUES(value),
                     description = VALUES(description),
                     calculationtime = VALUES(calculationtime),
                     fromutc = VALUES(fromutc),
-                    toutc = VALUES(toutc)
+                    toutc = VALUES(toutc),
+                    eventtimeutc = VALUES(eventtimeutc)
                 """),
                 data
             )
