@@ -12,6 +12,7 @@ class FieldSpec:
     type: str
     precision: int
     scale: int
+    unit: str
 
 @dataclass
 class RecordSpec:
@@ -37,8 +38,7 @@ class TimeSeries:
     period: str
     createdAt: datetime
     modifiedAt: datetime
-    vaultName: str
-    fieldNames: List[str]
+    vault: Vault
 
 @dataclass
 class DataPoint:
@@ -53,8 +53,9 @@ class DataPoint:
 class EDWApi:
 
     def __init__(self):
-        #self.base_url = "http://demo.amplifino.com:8080"
-        self.base_url = "http://10.64.88.197:8080"  # grafana.amplifino.com (vpn ip address)
+        self.base_url = "http://demo.amplifino.com:8080"
+        #self.base_url = "http://10.64.88.197:8080"  # grafana.amplifino.com (vpn ip address)
+
         #self.base_url = "http://localhost:8080"
 
     def get_vaults(self):
@@ -68,6 +69,13 @@ class EDWApi:
         response = requests.get(url)
         results = response.json()
         return self._json_to_timeseries(results)
+
+    def get_timeseries_by_name(self, name: str):
+        url = f"{self.base_url}/timeseries"
+        response = requests.get(url, params={"name": name})
+        results = response.json()
+        ts_list = self._json_to_timeseries(results)
+        return ts_list[0] if ts_list else None
 
     def _json_to_vaults(self, json: dict) -> List[Vault]:
         return [
@@ -102,8 +110,7 @@ class EDWApi:
                 period=item["period"],
                 createdAt=datetime.fromisoformat(item["createdAt"]),
                 modifiedAt=datetime.fromisoformat(item["modifiedAt"]),
-                vaultName=item["vaultName"],
-                fieldNames=item["fieldNames"]
+                vault=item["vault"],
             ) for item in json
         ]
 
@@ -178,11 +185,11 @@ class EDWApi:
 
 
 if __name__ == "__main__":
-    e = EDWApi()
+    '''e = EDWApi()
     quantile_fields = ["QMIN"]+[f"Q{int(q * 1000):03d}" for q in [x * 0.025 for x in range(1, 399)] if int(q * 1000) < 1000]+["QMAX","MEAN"]
     print(quantile_fields)
 
-    '''
+    
     fieldspecs = [{"name": x, "type": "DECIMAL", "precision": 9, "scale": 3} for x in quantile_fields]
     data = {
         "name": "qforecast",
@@ -197,10 +204,13 @@ if __name__ == "__main__":
     res = e.create_timeseries("amplisol/BE/DA", "qforecast", "PT15M", None, None, None, None)
     res = e.create_timeseries("amplisol/BE/DA6PM", "qforecast", "PT15M", None, None, None, None)
     res = e.create_timeseries("amplisol/BE/MR", "qforecast", "PT15M", None, None, None, None)
-    '''
+    
     #print(res)
 
     #da_ts = next(filter(lambda x: x.name=="amplisol/BE/DA", e.get_timeseries()),None)
+
+    ts = e.get_timeseries_by_name("amplisol/BE/DA")
+
     da_ts = next(filter(lambda x: x.name == "profile/128187", e.get_timeseries()), None)
 
     dp = DataPoint(start="2023-10-01T00:00:00Z", values=[0 for x in range(2)])
@@ -213,5 +223,6 @@ if __name__ == "__main__":
     # or :
     res = e.store_dataframe(da_ts.id, df, time_col="UTCTIME", val_cols=quantile_fields)
 
-    print(res)
+    print(res)'''
+    pass
 

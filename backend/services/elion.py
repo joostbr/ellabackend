@@ -216,3 +216,6 @@ class Elion:
             df = self.get_site_data(site_id, fromutc, toutc)
             self.store_data(ts, df)
 
+if __name__ == "__main__":
+    elion = Elion()
+    elion.run()
