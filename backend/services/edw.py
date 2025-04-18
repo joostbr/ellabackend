@@ -1,10 +1,14 @@
 import pandas as pd
 import requests
+import os
 from dataclasses import dataclass
 from typing import List, Union
 from datetime import datetime
 import json
 import pytz
+from dotenv import load_dotenv
+
+load_dotenv()
 
 @dataclass
 class FieldSpec:
@@ -54,9 +58,9 @@ class EDWApi:
 
     def __init__(self):
         #self.base_url = "http://demo.amplifino.com:8080"
-        self.base_url = "http://10.64.88.197:8080"  # grafana.amplifino.com (vpn ip address)
-
+        #self.base_url = "http://10.64.88.197:8080"  # grafana.amplifino.com (vpn ip address)
         #self.base_url = "http://localhost:8080"
+        self.base_url = os.getenv("EDW_API_ENDPOINT", default="http://demo.amplifino.com:8080")
 
     def get_vaults(self):
         url = f"{self.base_url}/vaults"
