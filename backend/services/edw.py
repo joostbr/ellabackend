@@ -53,8 +53,8 @@ class DataPoint:
 class EDWApi:
 
     def __init__(self):
-        self.base_url = "http://demo.amplifino.com:8080"
-        #self.base_url = "http://10.64.88.197:8080"  # grafana.amplifino.com (vpn ip address)
+        #self.base_url = "http://demo.amplifino.com:8080"
+        self.base_url = "http://10.64.88.197:8080"  # grafana.amplifino.com (vpn ip address)
 
         #self.base_url = "http://localhost:8080"
 
