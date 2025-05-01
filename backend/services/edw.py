@@ -157,6 +157,23 @@ class EDWApi:
         response = requests.get(url, params={"from": self.isotime(from_dt), "to": self.isotime(to_dt)})
         return response.json()
 
+    def get_datapoints_as_df(self, ts: TimeSeries, from_dt: datetime, to_dt: datetime):
+        url = f"{self.base_url}/timeseries/{ts.id}/values"
+        response = requests.get(url, params={"from": self.isotime(from_dt), "to": self.isotime(to_dt)})
+        data = response.json()
+        df = pd.DataFrame(data)
+
+        # Split the 'values' list into separate columns
+        values_df = pd.DataFrame(df['values'].tolist(), columns=[x["name"] for x in ts.vault["recordSpec"]["fieldSpecs"]])
+
+        # Combine the 'start' column with the values DataFrame
+        df = pd.concat([df['start'], values_df], axis=1)
+
+        # Convert 'start' to datetime (optional, for consistency)
+        df['start'] = pd.to_datetime(df['start'])
+
+        return df
+
     def create_timeseries(self, ts_name: str, vault_name: str, period: str, customer: str, cluster: str, kind: str, section: str):
         url = f"{self.base_url}/timeseries"
         data = {
