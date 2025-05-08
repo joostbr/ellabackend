@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 from dotenv import load_dotenv
 from backend.services.edw import DataPoint, TimeSeries, EDWApi
 
-SITE_IDS = [341,342,343] # kiosun
+SITE_IDS = [341,342,343,307,332,400] # kiosun
 
 load_dotenv()
 
@@ -169,11 +169,9 @@ class Elion:
         timeseries = self.edw_api.get_timeseries()
         ts = next(filter(lambda x: x.name == f"elion/{site_id}", timeseries), None)
         if not ts:
-            vault = next(filter(lambda x: x.name== "elion", self.edw_api.get_vaults()), None)
-            if vault:
-                res = self.edw_api.create_timeseries(vault.id, f"elion/{site_id}", "PT15M", None, None, None, None)
-                print("created timeseries", res)
-                return res
+            res = self.edw_api.create_timeseries (f"elion/{site_id}", "elion","PT15M", None, None, None, None)
+            print("created timeseries", res)
+            return res
 
     def find_or_create_timeseries(self, site_id):
         timeseries = self.edw_api.get_timeseries()

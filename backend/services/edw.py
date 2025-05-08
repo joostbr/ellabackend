@@ -97,7 +97,8 @@ class EDWApi:
                             name=fs["name"],
                             type=fs["type"],
                             precision=fs["precision"],
-                            scale=fs["scale"]
+                            scale=fs["scale"],
+                            unit=fs["unit"]
                         ) for fs in item["recordSpec"]["fieldSpecs"]
                     ]
                 )

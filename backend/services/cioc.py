@@ -85,7 +85,7 @@ class E2XAPI:
                 data = response.json()
                 data["UTCTIME"] = dt
                 result.append(data)
-                print("received data for", dt.isoformat())
+                # print("received data for", dt.isoformat())
 
             except requests.exceptions.HTTPError as e:
                 if response.status_code == 400:
